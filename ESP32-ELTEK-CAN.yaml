@@ -10,8 +10,8 @@ wifi:
   networks:
   - ssid: !secret wifi_ssid
     password: !secret wifi_password
-  # - ssid: !secret wifi_ssid_garage
-    # password: !secret wifi_password
+  - ssid: !secret wifi_ssid_garage
+    password: !secret wifi_password
 
 api:
 ota:
@@ -27,7 +27,7 @@ globals:
     restore_value: no
     initial_value: '0'
   - id: current_output
-    type: int
+    type: float
     restore_value: no
     initial_value: '0'
   - id: temp_inlet
@@ -57,14 +57,41 @@ canbus:
           ESP_LOGI("main", "temp outlet = %d °C", x[7]);
           ESP_LOGI("main", "input voltage = %d V", 256*x[6]+x[5]);
           ESP_LOGI("main", "output voltage = %.2f V", (256*x[4]+x[3]) / 100.0 );
-          ESP_LOGI("main", "output current = %d A", 256*x[2]+x[1]);
+          ESP_LOGI("main", "output current = %d A", 256*x[2]+x[1] / 10.0);
           id(temp_inlet) = x[0];
           id(temp_outlet) = x[7];
           id(voltage_input) = 256*x[6]+x[5];
           id(voltage_output) = (256*x[4]+x[3]) / 100.0;
-          id(current_output) = 256*x[2]+x[1];
+          id(current_output) = (256*x[2]+x[1]) / 10.0;
           if (id(current_output) > 100) id(current_output) = 0;
 
+interval:
+  - interval: 1s
+    then:
+          - canbus.send:
+              use_extended_id: true
+              can_id: 0x05004804
+              canbus_id: eltek
+              data: [0x06, 0x31, 0x71, 0x01, 0x60, 0x38, 0x00, 0x00]
+          - canbus.send:
+              use_extended_id: true
+              can_id: 0x05FF4004
+              canbus_id: eltek
+              data: !lambda |-
+                uint8_t can_mesg[] = {0, 0, 0, 0, 0, 0, 0, 0};
+                uint16_t eltek_i10 = id(eltek_current).state * 10;
+                uint16_t eltek_u100 = id(eltek_voltage).state * 100;
+                can_mesg[0] = eltek_i10 & 0xFF;
+                can_mesg[1] = (eltek_i10 >> 8) & 0xFF;
+                can_mesg[2] = eltek_u100 & 0xFF;
+                can_mesg[3] = (eltek_u100 >> 8) & 0xFF;
+                can_mesg[4] = eltek_u100 & 0xFF;
+                can_mesg[5] = (eltek_u100 >> 8) & 0xFF;
+                can_mesg[6] = 0x3E;
+                can_mesg[7] = 0x17;
+                return {can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]};
+                ESP_LOGI("main", "send can id: 0x05004804 hex: %x %x %x %x %x %x %x %x", can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]);
+    
 sensor:
   - platform: template
     id: eltek_temp_inlet
@@ -111,6 +138,15 @@ sensor:
     update_interval: 1s
     lambda: |-
       return (id(current_output));
+  - platform: template
+    id: eltek_power_output
+    name: "Eltek power output"
+    device_class: power
+    unit_of_measurement: "W"
+    accuracy_decimals: 2
+    update_interval: 1s
+    lambda: |-
+      return (id(current_output) * id(voltage_output));
 
 number:
   - platform: template
@@ -125,32 +161,7 @@ number:
     step: 0.01
     optimistic: true
     # mode: slider
-    on_value:
-      then:
-          - canbus.send:
-              use_extended_id: true
-              can_id: 0x05004804
-              canbus_id: eltek
-              data: [0x06, 0x31, 0x71, 0x01, 0x60, 0x38, 0x00, 0x00]
-          - canbus.send:
-              use_extended_id: true
-              can_id: 0x05FF4004
-              canbus_id: eltek
-              data: !lambda |-
-                uint8_t can_mesg[] = {0, 0, 0, 0, 0, 0, 0, 0};
-                uint16_t eltek_i10 = id(eltek_current).state * 10;
-                uint16_t eltek_u100 = id(eltek_voltage).state * 100;
-                can_mesg[0] = eltek_i10 & 0xFF;
-                can_mesg[1] = (eltek_i10 >> 8) & 0xFF;
-                can_mesg[2] = eltek_u100 & 0xFF;
-                can_mesg[3] = (eltek_u100 >> 8) & 0xFF;
-                can_mesg[4] = eltek_u100 & 0xFF;
-                can_mesg[5] = (eltek_u100 >> 8) & 0xFF;
-                can_mesg[6] = 0x3E;
-                can_mesg[7] = 0x17;
-                return {can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]};
-                ESP_LOGI("main", "send can id: 0x05004804 hex: %x %x %x %x %x %x %x %x", can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]);
-             
+          
   - platform: template
     id: eltek_current
     name: "Eltek FP2 current"
@@ -163,33 +174,7 @@ number:
     step: 0.1
     optimistic: true
     # mode: slider
-    on_value:
-      then:
-          - canbus.send:
-              use_extended_id: true
-              can_id: 0x05004804
-              canbus_id: eltek
-              data: [0x06, 0x31, 0x71, 0x01, 0x60, 0x38, 0x00, 0x00]
-          - delay: 100ms
-          - canbus.send:
-              use_extended_id: true
-              can_id: 0x05FF4004
-              canbus_id: eltek
-              data: !lambda |-
-                uint8_t can_mesg[] = {0, 0, 0, 0, 0, 0, 0, 0};
-                uint16_t eltek_i10 = id(eltek_current).state * 10;
-                uint16_t eltek_u100 = id(eltek_voltage).state * 100;
-                can_mesg[0] = eltek_i10 & 0xFF;
-                can_mesg[1] = (eltek_i10 >> 8) & 0xFF;
-                can_mesg[2] = eltek_u100 & 0xFF;
-                can_mesg[3] = (eltek_u100 >> 8) & 0xFF;
-                can_mesg[4] = eltek_u100 & 0xFF;
-                can_mesg[5] = (eltek_u100 >> 8) & 0xFF;
-                can_mesg[6] = 0x3E;
-                can_mesg[7] = 0x17;
-                return {can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]};
-                ESP_LOGI("main", "send can id: 0x05004804 hex: %x %x %x %x %x %x %x %x", can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]);
-
+ 
 switch:
   - platform: restart
     name: "ESPhome Eltek FP2 restart"

@@ -11,4 +11,4 @@ Please note that PSU is reverting to the default voltage and no current limit wh
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/Eltek-Flaptak2-ESPhome-connection.jpg?raw=true)
 
 ## How it should looks like within the Home assistant lovelace
-![HA lovelace](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/Eltek-Flatpack2-HA2.png?raw=true)
+![HA lovelace](https://github.com/taHC81/Eltek-Flaptack2-ESPhome/blob/main/Eltek-Flatpack2-HA2.png?raw=true)

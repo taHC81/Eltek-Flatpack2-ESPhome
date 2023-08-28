@@ -73,6 +73,7 @@ interval:
               can_id: 0x05004804
               canbus_id: eltek
               data: [0x06, 0x31, 0x71, 0x01, 0x60, 0x38, 0x00, 0x00]
+          - delay: 100ms
           - canbus.send:
               use_extended_id: true
               can_id: 0x05FF4004
@@ -91,7 +92,7 @@ interval:
                 can_mesg[7] = 0x17;
                 return {can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]};
                 ESP_LOGI("main", "send can id: 0x05004804 hex: %x %x %x %x %x %x %x %x", can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]);
-    
+
 sensor:
   - platform: template
     id: eltek_temp_inlet
@@ -160,7 +161,6 @@ number:
     max_value: 57.60
     step: 0.01
     optimistic: true
-    # mode: slider
           
   - platform: template
     id: eltek_current
@@ -173,7 +173,6 @@ number:
     max_value: 41.70
     step: 0.1
     optimistic: true
-    # mode: slider
  
 switch:
   - platform: restart

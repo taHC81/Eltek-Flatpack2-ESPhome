@@ -15,12 +15,29 @@ wifi:
 
 api:
 ota:
-
 logger:
-  level: DEBUG
   
-# mqtt:
-   # broker: 192.168.0.102
+globals:
+  - id: voltage_input
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: voltage_output
+    type: float
+    restore_value: no
+    initial_value: '0'
+  - id: current_output
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: temp_inlet
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: temp_outlet
+    type: int
+    restore_value: no
+    initial_value: '0'
 
 canbus:
   - platform: esp32_can
@@ -31,20 +48,6 @@ canbus:
     use_extended_id: true
     bit_rate: 125kbps
     on_frame:
-    # - can_id: 0x05014400
-      # use_extended_id: true
-      # then:
-      # - lambda: |-
-          # ESP_LOGI("main", "received can id: 0x05002038 ACK");
-          # ESP_LOGI("main", "b0 = %02x", x[0]);
-          # ESP_LOGI("main", "b1 = %02x", x[1]);
-          # ESP_LOGI("main", "b2 = %02x", x[2]);
-          # ESP_LOGI("main", "b3 = %02x", x[3]);
-          # ESP_LOGI("main", "b4 = %02x", x[4]);
-          # ESP_LOGI("main", "b5 = %02x", x[5]);
-          # ESP_LOGI("main", "b6 = %02x", x[6]);
-          # ESP_LOGI("main", "b7 = %02x", x[7]);
-
     - can_id: 0x05014004
       use_extended_id: true
       then:
@@ -55,10 +58,75 @@ canbus:
           ESP_LOGI("main", "input voltage = %d V", 256*x[6]+x[5]);
           ESP_LOGI("main", "output voltage = %.2f V", (256*x[4]+x[3]) / 100.0 );
           ESP_LOGI("main", "output current = %d A", 256*x[2]+x[1]);
+          id(temp_inlet) = x[0];
+          id(temp_outlet) = x[7];
+          id(voltage_input) = 256*x[6]+x[5];
+          id(voltage_output) = (256*x[4]+x[3]) / 100.0;
+          id(current_output) = 256*x[2]+x[1];
+          if (id(current_output) > 100) id(current_output) = 0;
 
-interval:
-  - interval: 1s
-    then:
+sensor:
+  - platform: template
+    id: eltek_temp_inlet
+    name: "Eltek inlet temperature"
+    device_class: temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      return (id(temp_inlet));
+  - platform: template
+    id: eltek_temp_outlet
+    name: "Eltek outlet temperature"
+    device_class: temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      return (id(temp_outlet));
+  - platform: template
+    id: eltek_voltage_input
+    name: "Eltek voltage input"
+    device_class: voltage
+    unit_of_measurement: "V"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      return (id(voltage_input));
+  - platform: template
+    id: eltek_voltage_output
+    name: "Eltek voltage output"
+    device_class: voltage
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    update_interval: 1s
+    lambda: |-
+      return (id(voltage_output));
+  - platform: template
+    id: eltek_current_output
+    name: "Eltek current output"
+    device_class: current
+    unit_of_measurement: "A"
+    accuracy_decimals: 2
+    update_interval: 1s
+    lambda: |-
+      return (id(current_output));
+
+number:
+  - platform: template
+    id: eltek_voltage
+    name: "Eltek FP2 voltage"
+    device_class: voltage
+    unit_of_measurement: "V"
+    update_interval: 5s
+    restore_value: true
+    min_value: 43.50
+    max_value: 57.60
+    step: 0.01
+    optimistic: true
+    # mode: slider
+    on_value:
+      then:
           - canbus.send:
               use_extended_id: true
               can_id: 0x05004804
@@ -68,14 +136,67 @@ interval:
               use_extended_id: true
               can_id: 0x05FF4004
               canbus_id: eltek
-              data: [0xA0, 0x00, 0x40, 0x15, 0x40, 0x15, 0xE0, 0x15]
+              data: !lambda |-
+                uint8_t can_mesg[] = {0, 0, 0, 0, 0, 0, 0, 0};
+                uint16_t eltek_i10 = id(eltek_current).state * 10;
+                uint16_t eltek_u100 = id(eltek_voltage).state * 100;
+                can_mesg[0] = eltek_i10 & 0xFF;
+                can_mesg[1] = (eltek_i10 >> 8) & 0xFF;
+                can_mesg[2] = eltek_u100 & 0xFF;
+                can_mesg[3] = (eltek_u100 >> 8) & 0xFF;
+                can_mesg[4] = eltek_u100 & 0xFF;
+                can_mesg[5] = (eltek_u100 >> 8) & 0xFF;
+                can_mesg[6] = 0x3E;
+                can_mesg[7] = 0x17;
+                return {can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]};
+                ESP_LOGI("main", "send can id: 0x05004804 hex: %x %x %x %x %x %x %x %x", can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]);
+             
+  - platform: template
+    id: eltek_current
+    name: "Eltek FP2 current"
+    device_class: current
+    unit_of_measurement: "A"
+    update_interval: 5s
+    restore_value: true
+    min_value: 5.00
+    max_value: 41.70
+    step: 0.1
+    optimistic: true
+    # mode: slider
+    on_value:
+      then:
           - canbus.send:
               use_extended_id: true
               can_id: 0x05004804
               canbus_id: eltek
               data: [0x06, 0x31, 0x71, 0x01, 0x60, 0x38, 0x00, 0x00]
+          - delay: 100ms
           - canbus.send:
               use_extended_id: true
-              can_id: 0x05019C00
+              can_id: 0x05FF4004
               canbus_id: eltek
-              data: [0x29, 0x15, 0x00, 0x40, 0x15, 0x00, 0x00, 0x00]
+              data: !lambda |-
+                uint8_t can_mesg[] = {0, 0, 0, 0, 0, 0, 0, 0};
+                uint16_t eltek_i10 = id(eltek_current).state * 10;
+                uint16_t eltek_u100 = id(eltek_voltage).state * 100;
+                can_mesg[0] = eltek_i10 & 0xFF;
+                can_mesg[1] = (eltek_i10 >> 8) & 0xFF;
+                can_mesg[2] = eltek_u100 & 0xFF;
+                can_mesg[3] = (eltek_u100 >> 8) & 0xFF;
+                can_mesg[4] = eltek_u100 & 0xFF;
+                can_mesg[5] = (eltek_u100 >> 8) & 0xFF;
+                can_mesg[6] = 0x3E;
+                can_mesg[7] = 0x17;
+                return {can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]};
+                ESP_LOGI("main", "send can id: 0x05004804 hex: %x %x %x %x %x %x %x %x", can_mesg[0], can_mesg[1], can_mesg[2], can_mesg[3], can_mesg[4], can_mesg[5], can_mesg[6], can_mesg[7]);
+
+switch:
+  - platform: restart
+    name: "ESPhome Eltek FP2 restart"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: ESP IP Address
+    ssid:
+      name: ESP Connected SSID

@@ -1,5 +1,5 @@
 # Eltek-Flaptak2-ESPhome
-Monitor and configure Eltek Flaptak2 PSU using ESPhome
+Configure and monitor Eltek Flaptak2 PSU using ESPhome, here used to charge Li-ion battery pack, controlled from Home assistant.
 
 ## HW prototype
 - WEMOS D1 MINI ESP32

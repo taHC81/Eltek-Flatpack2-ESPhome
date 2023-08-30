@@ -2,7 +2,7 @@
 Monitor and configure Eltek Flaptak2 PSU using ESPhome
 
 ## HW prototype
-- Wemos D1 mini 32 (ESP32 based)
+- WEMOS D1 MINI ESP32
 - SN65HVD230 CAN transciver
 
 ## Notes

@@ -6,7 +6,8 @@ Monitor and configure Eltek Flaptak2 PSU using ESPhome
 - SN65HVD230 CAN transciver
 
 ## Notes
-Please note that PSU is reverting to the default voltage and no current limit while the communication is lost.
+- note that PSU is reverting to the default voltage with no current limit while the communication is lost
+- CAN bus is wired directly from the PSU, you shall use "professional" board to connect the backplane
 
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome2.jpg?raw=true)
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome1.jpg?raw=true)

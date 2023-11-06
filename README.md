@@ -3,7 +3,7 @@ Configure and monitor Eltek Flaptak2 PSU using ESPhome, here used to charge Li-i
 
 ## HW prototype
 - WEMOS D1 MINI ESP32
-- SN65HVD230 CAN transciver
+- SN65HVD230 CAN transceiver
 
 ## Sources
 https://openinverter.org/forum/viewtopic.php?t=1351
@@ -11,6 +11,7 @@ https://openinverter.org/forum/viewtopic.php?t=1351
 ## Notes
 - note that PSU is reverting to the default voltage with no current limit while the communication is lost
 - CAN bus is wired directly from the PSU, you shall use "professional" board to connect the backplane
+- there's a layer of insluating tape (polyimide, kapton) below the CAN transceiver
 
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome2.jpg?raw=true)
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome1.jpg?raw=true)

@@ -183,3 +183,11 @@ text_sensor:
       name: ESP IP Address
     ssid:
       name: ESP Connected SSID
+
+  - platform: template
+    name: "Flatpack2 temperatures"
+    lambda: |-
+      char buf[200];
+      sprintf(buf, "%.0f°C / %.0f°C", id(eltek_temp_inlet).state, id(eltek_temp_outlet).state);
+      return (std::string) buf;
+    update_interval: 1s

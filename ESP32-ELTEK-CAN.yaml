@@ -72,7 +72,7 @@ interval:
           use_extended_id: true
           can_id: 0x05004804
           canbus_id: eltek
-          data: [0x06, 0x31, 0x71, 0x01, 0x60, 0x38, 0x00, 0x00]   # update with your serial number converted to HEX
+          data: [0x06, 0x31, 0x71, 0x01, 0x60, 0x38, 0x00, 0x00]   # update with your serial number as HEX
       - canbus.send:
           use_extended_id: true
           can_id: 0x05FF4004

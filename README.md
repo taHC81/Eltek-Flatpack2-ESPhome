@@ -12,6 +12,7 @@ https://openinverter.org/forum/viewtopic.php?t=1351
 - note that PSU is reverting to the default voltage with no current limit while the communication is lost
 - CAN bus is wired directly from the PSU, you shall use "professional" board to connect the backplane
 - there's a layer of insluating tape (polyimide, kapton) below the CAN transceiver
+- update serial number with your own (see the CAN message 0x05004804)
 
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome2.jpg?raw=true)
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome1.jpg?raw=true)

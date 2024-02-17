@@ -13,6 +13,7 @@ https://openinverter.org/forum/viewtopic.php?t=1351
 - CAN bus is wired directly from the PSU, you shall use "professional" board to connect the backplane
 - there's a layer of insluating tape (polyimide, kapton) below the CAN transceiver
 - update serial number with your own (see the CAN message 0x05004804)
+- current limiting is working only above 48V on an output terminals (not just configured voltage)
 
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome2.jpg?raw=true)
 ![HW](https://github.com/taHC81/Eltek-Flaptak2-ESPhome/blob/main/FP2-ESPhome1.jpg?raw=true)

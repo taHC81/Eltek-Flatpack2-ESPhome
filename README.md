@@ -1,4 +1,4 @@
-# Eltek-Flaptak2-ESPhome
+# Eltek-Flatpack2-ESPhome
 Configure and monitor Eltek Flatpack2 PSU using ESPhome, here used to charge Li-ion battery pack, controlled from Home assistant.
 
 ## HW prototype

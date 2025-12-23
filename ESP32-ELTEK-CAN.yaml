@@ -54,17 +54,23 @@ canbus:
     use_extended_id: true
     bit_rate: 125kbps
     on_frame:
-      - can_id: 0x5002038   # serial number anounce message, populate serial_number array
+      - can_id:      0  # listen to all messages
+        can_id_mask: 0
         use_extended_id: true
         then:
         - lambda: |-
-            id(serial_number)[0] = x[1];
-            id(serial_number)[1] = x[2];
-            id(serial_number)[2] = x[3];
-            id(serial_number)[3] = x[4];
-            id(serial_number)[4] = x[5];
-            id(serial_number)[5] = x[6];
-            ESP_LOGI("main", "Serial number updated!");
+            char buf[29];
+            snprintf((char*)&buf, sizeof(buf), "%08X, %02X%02X%02X%02X%02X%02X%02X%02X", can_id, x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+            ESP_LOGI("can", "%s", (const char*)&buf);
+            if (( can_id & 0xFFFF0000) == 0x05000000 ) {    // welcome message
+                id(serial_number)[0] = x[1];
+                id(serial_number)[1] = x[2];
+                id(serial_number)[2] = x[3];
+                id(serial_number)[3] = x[4];
+                id(serial_number)[4] = x[5];
+                id(serial_number)[5] = x[6];
+                ESP_LOGI("main", "Serial number updated!");
+            }
         - canbus.send:     # send login message
             use_extended_id: true
             can_id: 0x05004804
